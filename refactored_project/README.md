@@ -34,19 +34,34 @@ A comprehensive blockchain-based attendance tracking system with QR code functio
 ## 🏗️ Architecture
 
 ```
-blockchain-qr-attendance/
-├── backend/                    # FastAPI Backend
-│   ├── server.py              # Main application with all endpoints
-│   ├── requirements.txt       # Python dependencies
-│   └── .env                   # Environment variables
-├── frontend/                  # React Frontend
+refactored_project/
+│
+├── backend/
+│   ├── main.py
+│   ├── routes/
+│   ├── models/
+│   ├── database/
+│   ├── auth/
+│   ├── utils/
+│   └── requirements.txt
+│
+├── frontend/
 │   ├── src/
-│   │   ├── App.js            # Main React application
-│   │   ├── App.css           # Styling and animations
-│   │   └── components/ui/     # Shadcn UI components
-│   ├── package.json          # Node.js dependencies
-│   └── public/               # Static assets
-└── README.md                 # This file
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── package.json
+│   └── vite.config.js
+│
+├── blockchain/
+│   ├── contract-abi.json
+│   ├── eth.js
+│   ├── hardhat.config.js
+│   └── package.json
+│
+└── README.txt
+
 ```
 
 ## 🛠️ Installation & Setup
