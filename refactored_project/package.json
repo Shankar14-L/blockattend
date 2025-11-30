@@ -1,0 +1,24 @@
+{
+  "name": "blockchain-qr-attendance-eth-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "pip install -r backend/requirements.txt || echo 'Please install pip manually'",
+    "install:contracts": "npm install",
+    "start:backend": "uvicorn backend.server:app --reload --host 127.0.0.1 --port 5000",
+    "start:frontend": "cd frontend && npm start",
+    "start:node": "npx hardhat node",
+    "deploy:contracts": "npx hardhat run  scripts/deploy.js --network localhost",
+    "start:all": "run_all.bat"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "concurrently": "^8.2.0",
+    "hardhat": "^2.26.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "ethers": "^6.15.0" 
+  }
+}

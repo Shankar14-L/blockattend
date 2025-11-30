@@ -1,0 +1,149 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\Shankar\\Downloads\\max\\contracts\\Attendance.sol": {
+      "lastModificationDate": 1759029766372,
+      "contentHash": "a2506aa496e270da687f1972f1bd5dad",
+      "sourceName": "contracts/Attendance.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Attendance"
+      ]
+    },
+    "C:\\Users\\Shankar\\Downloads\\max\\monday\\max\\contracts\\Attendance.sol": {
+      "lastModificationDate": 1759037469166,
+      "contentHash": "94a9ca3ab800a139a355082e330413b3",
+      "sourceName": "contracts/Attendance.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Attendance"
+      ]
+    },
+    "C:\\Users\\Shankar\\Downloads\\refactored_project\\contracts\\Attendance.sol": {
+      "lastModificationDate": 1763920894835,
+      "contentHash": "94a9ca3ab800a139a355082e330413b3",
+      "sourceName": "contracts/Attendance.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Attendance"
+      ]
+    },
+    "C:\\Users\\Shankar\\Downloads\\refactored_project_fixed_v2_fixed_v2\\refactored_project\\refactored_project\\contracts\\Attendance.sol": {
+      "lastModificationDate": 1764496308842,
+      "contentHash": "94a9ca3ab800a139a355082e330413b3",
+      "sourceName": "contracts/Attendance.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Attendance"
+      ]
+    }
+  }
+}

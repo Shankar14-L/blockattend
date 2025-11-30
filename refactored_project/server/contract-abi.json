@@ -1,0 +1,15 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "session",
+        "type": "string"
+      }
+    ],
+    "name": "markAttendance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: blockchain-attendance-db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: blockchain_attendance
+
+  backend:
+    build: ./backend
+    container_name: blockchain-attendance-backend
+    restart: always
+    ports:
+      - "8001:8001"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=blockchain_attendance
+      - CORS_ORIGINS=http://localhost:3000
+      - SECRET_KEY=blockchain-qr-attendance-secret-key-2025
+      # IPFS endpoints (used if USE_IPFS=true)
+      - IPFS_API_URL=http://127.0.0.1:5001
+      - IPFS_GATEWAY_URL=http://127.0.0.1:8080
+      - USE_IPFS=true
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    container_name: blockchain-attendance-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  mongodb_data:
