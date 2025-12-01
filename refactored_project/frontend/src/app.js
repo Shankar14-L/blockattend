@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Toaster } from 'sonner';
 
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import StudentDashboard from './pages/StudentDashboard';
@@ -47,6 +48,7 @@ function App() {
         
         <Routes>
           {/* Public Routes */}
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
@@ -71,10 +73,10 @@ function App() {
           />
           
           {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/landing" replace />} />
           
           {/* 404 fallback */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/landing" replace />} />
         </Routes>
       </AuthProvider>
     </Router>
