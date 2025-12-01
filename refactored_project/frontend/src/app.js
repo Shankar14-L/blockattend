@@ -76,11 +76,11 @@ function App() {
           <Route path="/" element={<Navigate to="/landing" replace />} />
           
           {/* 404 fallback */}
-          <Route path="/" element={<Navigate to="/landing" replace />} />
+          <Route path="*" element={<Navigate to="/landing" replace />} />
         </Routes>
       </AuthProvider>
     </Router>
   );
 }
 
-export default App;
+export default App; 
