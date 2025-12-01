@@ -13,6 +13,9 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# install Node.js (LTS)
+RUN apt-get update && apt-get install -y nodejs npm
+
 # Copy application code
 COPY . .
 
