@@ -33,14 +33,19 @@ const RegisterPage = () => {
       return;
     }
 
-    // 2. Roll Number Validation (e.g., 23wu0101096)
-    // Pattern: YY[wW]u\d+ where YY is 23, 24, 25, etc.
-    const rollNoRegex = /^\d{2}[wW]u\d+$/;
-    if (!rollNoRegex.test(rollNo)) {
-      alert('Registration failed: Roll Number format is invalid. It should start with the year (e.g., 23) followed by "wu" and then digits (e.g., 23wu0101096).');
-      setLoading(false); // Ensure loading state is reset if validation fails
-      return;
-    }
+  // 2. Roll Number Validation (e.g., 23wu0101096)
+// Accepts: wu, Wu, wU, WU
+const rollNoRegex = /^\d{2}[wW][uU]\d+$/;
+
+if (!rollNoRegex.test(rollNo)) {
+  alert(
+    'Registration failed: Roll Number format is invalid.\n\n' +
+    'Correct examples:\n' +
+    '23WU01010**\n'
+  );
+  setLoading(false);
+  return;
+}
     // --- End Frontend Validation ---
     setLoading(true);
     const studentData = {
