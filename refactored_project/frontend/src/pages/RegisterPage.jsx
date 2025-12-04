@@ -24,6 +24,24 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // --- Frontend Validation ---
+    // 1. Email Suffix Validation
+    if (!email.endsWith('@woxsen.edu.in')) {
+      alert('Registration failed: Email must end with @woxsen.edu.in');
+      setLoading(false); // Ensure loading state is reset if validation fails
+      return;
+    }
+
+    // 2. Roll Number Validation (e.g., 23wu0101096)
+    // Pattern: YY[wW]u\d+ where YY is 23, 24, 25, etc.
+    const rollNoRegex = /^\d{2}[wW]u\d+$/;
+    if (!rollNoRegex.test(rollNo)) {
+      alert('Registration failed: Roll Number format is invalid. It should start with the year (e.g., 23) followed by "wu" and then digits (e.g., 23wu0101096).');
+      setLoading(false); // Ensure loading state is reset if validation fails
+      return;
+    }
+    // --- End Frontend Validation ---
     setLoading(true);
     const studentData = {
       name,
@@ -110,7 +128,7 @@ const RegisterPage = () => {
                 <Input
                   id="rollNo"
                   type="text"
-                  placeholder="e.g., 19CS1001"
+                  placeholder="e.g.,23WU0******"
                   value={rollNo}
                   onChange={(e) => setRollNo(e.target.value)}
                   required
