@@ -16,153 +16,173 @@ import { useAuth, API } from '../context/AuthContext';
 import { useToast } from '../hooks/use-toast'; // Assuming this is the correct hook path
 
 // QR Scanner Component with Camera and Manual Input
+// QR Scanner Component with Camera Zoom + Manual Input
 const QRScanner = ({ onScan, onClose }) => {
   const [manualInput, setManualInput] = useState('');
-  const [scanMode, setScanMode] = useState('manual'); // Start with manual mode by default
+  const [scanMode, setScanMode] = useState('manual');
   const [cameraError, setCameraError] = useState(null);
   const [scanning, setScanning] = useState(false);
 
+  const [zoom, setZoom] = useState(1);
+  const [zoomSupported, setZoomSupported] = useState(false);
+  const [zoomRange, setZoomRange] = useState({ min: 1, max: 1, step: 0.1 });
+
+  const containerRef = useRef(null);
+  const videoRef = useRef(null);
+  const trackRef = useRef(null);
+
   const handleCameraScan = (data) => {
-    if (data && data.text && !scanning) {
+    const text = data?.text;
+    if (text && !scanning) {
       setScanning(true);
-      onScan(data.text);
-      toast.success('QR Code detected!');
-      // Reset after a delay to prevent multiple scans
+      onScan(text);
+      toast.success("QR code detected!");
       setTimeout(() => setScanning(false), 2000);
     }
   };
 
   const handleCameraError = (err) => {
-    console.error('Camera error:', err);
-    setCameraError(err?.message || 'Camera access denied or not available');
-    toast.error('Camera error. Please use Manual Input or check camera permissions.');
+    setCameraError(err?.message || "Camera access error");
+    toast.error("Camera error. Please use manual mode.");
   };
 
-  const handleManualSubmit = () => {
-    if (manualInput.trim()) {
-      onScan(manualInput.trim());
-      setManualInput('');
-    } else {
-      toast.error('Please enter QR code content');
+  // Detect zoom capability
+  useEffect(() => {
+    setTimeout(() => {
+      const vid = containerRef.current?.querySelector("video");
+      if (!vid) return;
+
+      videoRef.current = vid;
+
+      const stream = vid.srcObject;
+      if (!stream) return;
+
+      const track = stream.getVideoTracks()[0];
+      trackRef.current = track;
+
+      try {
+        const caps = track.getCapabilities();
+        if (caps.zoom) {
+          setZoomSupported(true);
+          setZoomRange({
+            min: caps.zoom.min,
+            max: caps.zoom.max,
+            step: caps.zoom.step || 0.1
+          });
+
+          const settings = track.getSettings();
+          setZoom(settings.zoom || 1);
+        }
+      } catch (e) {
+        console.warn("Zoom capability not supported", e);
+      }
+    }, 500);
+  }, [scanMode]);
+
+  const applyZoom = async (value) => {
+    const clamped = Math.max(zoomRange.min, Math.min(zoomRange.max, value));
+    setZoom(clamped);
+
+    const track = trackRef.current;
+
+    if (track && zoomSupported) {
+      try {
+        await track.applyConstraints({ advanced: [{ zoom: clamped }] });
+      } catch {
+        console.warn("Zoom constraint failed");
+      }
     }
+  };
+
+  const zoomIn = () => applyZoom(zoom + zoomRange.step);
+  const zoomOut = () => applyZoom(zoom - zoomRange.step);
+
+  const handleManualSubmit = () => {
+    if (!manualInput.trim()) {
+      toast.error("Please enter QR content");
+      return;
+    }
+    onScan(manualInput.trim());
+    setManualInput('');
   };
 
   return (
     <div className="space-y-4">
+      {/* Mode Switch */}
       <div className="flex gap-2 border-b pb-3">
         <button
-          onClick={() => {
-            setScanMode('manual');
-            setCameraError(null);
-          }}
-          className={`flex-1 py-2 px-4 rounded transition-colors ${
-            scanMode === 'manual' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          onClick={() => setScanMode("manual")}
+          className={`flex-1 py-2 rounded ${scanMode === "manual" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
         >
           Manual Input
         </button>
         <button
-          onClick={() => {
-            setScanMode('camera');
-            setCameraError(null);
-            setScanning(false);
-          }}
-          className={`flex-1 py-2 px-4 rounded transition-colors ${
-            scanMode === 'camera' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          onClick={() => setScanMode("camera")}
+          className={`flex-1 py-2 rounded ${scanMode === "camera" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
         >
-          <Camera className="inline-block h-4 w-4 mr-2" />
-          Camera
+          <Camera className="inline h-4 w-4 mr-1" /> Camera
         </button>
       </div>
 
-      {scanMode === 'camera' ? (
+      {/* CAMERA MODE */}
+      {scanMode === "camera" ? (
         <div className="space-y-4">
-          <div className="w-full rounded-lg overflow-hidden bg-black">
-            {cameraError ? (
-              <div className="h-64 flex items-center justify-center">
-                <div className="text-center text-white p-4">
-                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-400" />
-                  <p className="text-sm mb-2">Camera Error</p>
-                  <p className="text-xs opacity-75">{cameraError}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="relative">
-                <QrReader
-                  delay={300}
-                  onError={handleCameraError}
-                  onScan={handleCameraScan}
-                  style={{ width: '100%' }}
-                  constraints={{ 
-                    video: { 
-                      facingMode: 'environment' // Use back camera on mobile
-                    } 
-                  }}
-                />
-                {scanning && (
-                  <div className="absolute inset-0 bg-green-500 bg-opacity-20 flex items-center justify-center">
-                    <div className="bg-white rounded-lg p-4">
-                      <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
-                    </div>
-                  </div>
-                )}
+          <div ref={containerRef} className="w-full rounded-lg overflow-hidden bg-black">
+            <QrReader
+              delay={700}
+              onError={handleCameraError}
+              onScan={handleCameraScan}
+              style={{ width: "100%", maxWidth: "400px", margin: "0 auto" }}
+              constraints={{ video: { facingMode: "environment" } }}
+            />
+
+            {scanning && (
+              <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-30">
+                <CheckCircle className="h-10 w-10 text-white" />
               </div>
             )}
           </div>
-          <Alert>
-            <Camera className="h-4 w-4" />
-            <AlertDescription>
-              Point your camera at the QR code. Make sure to allow camera permissions when prompted.
-            </AlertDescription>
-          </Alert>
-          {cameraError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Can't access camera. Please check browser permissions or use Manual Input mode.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <Label className="block text-sm font-medium mb-2">Paste QR Code Content</Label>
-            <Textarea
-              className="w-full font-mono text-sm"
-              rows={4}
-              placeholder="Example: class-id-123|qr-id-456|1234567890"
-              value={manualInput}
-              onChange={(e) => setManualInput(e.target.value)}
+
+          {/* Zoom controls */}
+          <div className="flex items-center gap-2">
+            <Button onClick={zoomOut}>-</Button>
+            <input
+              type="range"
+              min={zoomRange.min}
+              max={zoomRange.max}
+              step={zoomRange.step}
+              value={zoom}
+              onChange={(e) => applyZoom(Number(e.target.value))}
+              className="flex-1"
             />
+            <Button onClick={zoomIn}>+</Button>
+            <span className="text-xs w-12 text-right">{zoom.toFixed(1)}x</span>
           </div>
-          <Button
-            onClick={handleManualSubmit}
-            className="w-full"
-            disabled={!manualInput.trim()}
-          >
-            Submit QR Content
-          </Button>
+
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              <strong>Format:</strong> class_id|qr_id|timestamp<br/>
-              Copy this from teacher's "Copy Content" button
+            <AlertDescription>
+              {zoomSupported ? "Using native camera zoom." : "Zoom fallback: digital zoom only."}
             </AlertDescription>
           </Alert>
+        </div>
+      ) : (
+        // MANUAL MODE
+        <div className="space-y-4">
+          <Label>Paste QR Code Content</Label>
+          <Textarea
+            rows={3}
+            className="font-mono text-sm"
+            value={manualInput}
+            onChange={(e) => setManualInput(e.target.value)}
+          />
+          <Button className="w-full" onClick={handleManualSubmit}>
+            Submit
+          </Button>
         </div>
       )}
 
-      <Button
-        variant="outline"
-        onClick={onClose}
-        className="w-full"
-      >
+      <Button onClick={onClose} variant="outline" className="w-full">
         Cancel
       </Button>
     </div>
@@ -847,6 +867,33 @@ const StudentDashboard = () => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [alertDialog, setAlertDialog] = useState({ show: false, title: '', message: '', type: 'error' });
 
+  // Function to get current geolocation
+  const getGeolocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by your browser.'));
+      } else {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (error) => {
+            reject(new Error(`Geolocation error: ${error.message}`));
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          }
+        );
+      }
+    });
+  };
+ 
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -886,6 +933,20 @@ const StudentDashboard = () => {
 
       const [classId, qrId, timestamp] = parts;
 
+      // 1. Get Geolocation
+      let location;
+      try {
+        toast.info('Getting your location...', { id: 'location-toast', duration: 5000 });
+        location = await getGeolocation();
+        toast.dismiss('location-toast');
+      } catch (error) {
+        toast.error('Location Check Failed', {
+          description: error.message + '. Attendance requires your current location.',
+        });
+        setShowQRScanner(false);
+        return;
+      }
+
       // Client-side duplicate check
       const isDuplicate = attendance.some(
         record => record.qr_code_id === qrId && record.class_id === classId
@@ -910,8 +971,12 @@ const StudentDashboard = () => {
         return;
       }
 
-      // Mark attendance via API
-      const response = await axios.post(`${API}/attendance/mark`, { qr_content: qrContent });
+      // Mark attendance via API, including geolocation
+      const response = await axios.post(`${API}/attendance/mark`, { 
+        qr_content: qrContent,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
       
 	      if (response.data.status === 'duplicate') {
 	        toast.info('Attendance already marked for this session', {
