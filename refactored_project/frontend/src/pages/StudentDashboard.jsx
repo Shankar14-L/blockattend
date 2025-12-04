@@ -11,178 +11,366 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
-import { QrCode, Users, BookOpen, TrendingUp, Clock, CheckCircle, AlertCircle, RefreshCw, LogOut, Edit2, Save, X, Copy, ExternalLink, Wallet, Camera } from 'lucide-react';
+import { QrCode, Users, BookOpen, TrendingUp, Clock, CheckCircle, AlertCircle, RefreshCw, LogOut, Edit2, Save, X, Copy, ExternalLink, Wallet, Camera,ZoomIn, ZoomOut, Maximize, RotateCw, Focus  } from 'lucide-react';
 import { useAuth, API } from '../context/AuthContext';
 import { useToast } from '../hooks/use-toast'; // Assuming this is the correct hook path
 
 // QR Scanner Component with Camera and Manual Input
 // QR Scanner Component with Camera Zoom + Manual Input
+
 const QRScanner = ({ onScan, onClose }) => {
   const [manualInput, setManualInput] = useState('');
   const [scanMode, setScanMode] = useState('manual');
   const [cameraError, setCameraError] = useState(null);
   const [scanning, setScanning] = useState(false);
-
-  const [zoom, setZoom] = useState(1);
-  const [zoomSupported, setZoomSupported] = useState(false);
-  const [zoomRange, setZoomRange] = useState({ min: 1, max: 1, step: 0.1 });
-
-  const containerRef = useRef(null);
+  const [zoomLevel, setZoomLevel] = useState(1.5);
+  const [cameraFacing, setCameraFacing] = useState('environment'); // 'environment' or 'user'
+  const [videoTrack, setVideoTrack] = useState(null);
+  const [cameraCapabilities, setCameraCapabilities] = useState(null);
   const videoRef = useRef(null);
-  const trackRef = useRef(null);
+
+  // Handle camera track and capabilities
+  useEffect(() => {
+    if (scanMode === 'camera') {
+      const video = document.querySelector('video');
+      if (video && video.srcObject) {
+        const tracks = video.srcObject.getVideoTracks();
+        if (tracks.length > 0) {
+          const track = tracks[0];
+          setVideoTrack(track);
+          
+          // Get camera capabilities
+          const capabilities = track.getCapabilities ? track.getCapabilities() : null;
+          setCameraCapabilities(capabilities);
+          
+          // Apply initial zoom if supported
+          if (capabilities && capabilities.zoom) {
+            applyZoom(zoomLevel);
+          }
+        }
+      }
+    }
+  }, [scanMode]);
+
+  const applyZoom = async (level) => {
+    if (!videoTrack) return;
+    
+    try {
+      const capabilities = videoTrack.getCapabilities();
+      if (capabilities && capabilities.zoom) {
+        const settings = videoTrack.getSettings();
+        const { min, max, step } = capabilities.zoom;
+        
+        // Constrain zoom level to camera's supported range
+        const constrainedZoom = Math.max(min, Math.min(max, level));
+        
+        await videoTrack.applyConstraints({
+          advanced: [{ zoom: constrainedZoom }]
+        });
+        
+        setZoomLevel(constrainedZoom);
+        toast.success(`Zoom: ${constrainedZoom.toFixed(1)}x`);
+      } else {
+        toast.error('Zoom not supported on this camera');
+      }
+    } catch (error) {
+      console.error('Zoom error:', error);
+      toast.error('Failed to apply zoom');
+    }
+  };
+
+  const handleZoomIn = () => {
+    const newZoom = Math.min(zoomLevel + 0.5, 5);
+    applyZoom(newZoom);
+  };
+
+  const handleZoomOut = () => {
+    const newZoom = Math.max(zoomLevel - 0.5, 1);
+    applyZoom(newZoom);
+  };
+
+  const handleFocus = async () => {
+    if (!videoTrack) return;
+    
+    try {
+      const capabilities = videoTrack.getCapabilities();
+      if (capabilities && capabilities.focusMode) {
+        await videoTrack.applyConstraints({
+          advanced: [{ focusMode: 'continuous' }]
+        });
+        toast.success('Auto-focus enabled');
+      }
+    } catch (error) {
+      console.error('Focus error:', error);
+    }
+  };
+
+  const switchCamera = () => {
+    const newFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+    setCameraFacing(newFacing);
+    setCameraError(null);
+    setVideoTrack(null);
+    toast.info(`Switching to ${newFacing === 'environment' ? 'back' : 'front'} camera...`);
+  };
 
   const handleCameraScan = (data) => {
-    const text = data?.text;
-    if (text && !scanning) {
+    if (data && data.text && !scanning) {
       setScanning(true);
-      onScan(text);
-      toast.success("QR code detected!");
+      onScan(data.text);
+      toast.success('QR Code detected!');
       setTimeout(() => setScanning(false), 2000);
     }
   };
 
   const handleCameraError = (err) => {
-    setCameraError(err?.message || "Camera access error");
-    toast.error("Camera error. Please use manual mode.");
+    console.error('Camera error:', err);
+    setCameraError(err?.message || 'Camera access denied or not available');
+    toast.error('Camera error. Please use Manual Input or check camera permissions.');
   };
-
-  // Detect zoom capability
-  useEffect(() => {
-    setTimeout(() => {
-      const vid = containerRef.current?.querySelector("video");
-      if (!vid) return;
-
-      videoRef.current = vid;
-
-      const stream = vid.srcObject;
-      if (!stream) return;
-
-      const track = stream.getVideoTracks()[0];
-      trackRef.current = track;
-
-      try {
-        const caps = track.getCapabilities();
-        if (caps.zoom) {
-          setZoomSupported(true);
-          setZoomRange({
-            min: caps.zoom.min,
-            max: caps.zoom.max,
-            step: caps.zoom.step || 0.1
-          });
-
-          const settings = track.getSettings();
-          setZoom(settings.zoom || 1);
-        }
-      } catch (e) {
-        console.warn("Zoom capability not supported", e);
-      }
-    }, 500);
-  }, [scanMode]);
-
-  const applyZoom = async (value) => {
-    const clamped = Math.max(zoomRange.min, Math.min(zoomRange.max, value));
-    setZoom(clamped);
-
-    const track = trackRef.current;
-
-    if (track && zoomSupported) {
-      try {
-        await track.applyConstraints({ advanced: [{ zoom: clamped }] });
-      } catch {
-        console.warn("Zoom constraint failed");
-      }
-    }
-  };
-
-  const zoomIn = () => applyZoom(zoom + zoomRange.step);
-  const zoomOut = () => applyZoom(zoom - zoomRange.step);
 
   const handleManualSubmit = () => {
-    if (!manualInput.trim()) {
-      toast.error("Please enter QR content");
-      return;
+    if (manualInput.trim()) {
+      onScan(manualInput.trim());
+      setManualInput('');
+    } else {
+      toast.error('Please enter QR code content');
     }
-    onScan(manualInput.trim());
-    setManualInput('');
   };
 
   return (
     <div className="space-y-4">
-      {/* Mode Switch */}
+      {/* Mode Selector */}
       <div className="flex gap-2 border-b pb-3">
         <button
-          onClick={() => setScanMode("manual")}
-          className={`flex-1 py-2 rounded ${scanMode === "manual" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          onClick={() => {
+            setScanMode('manual');
+            setCameraError(null);
+          }}
+          className={`flex-1 py-2 px-4 rounded transition-colors ${
+            scanMode === 'manual' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
         >
           Manual Input
         </button>
         <button
-          onClick={() => setScanMode("camera")}
-          className={`flex-1 py-2 rounded ${scanMode === "camera" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          onClick={() => {
+            setScanMode('camera');
+            setCameraError(null);
+            setScanning(false);
+          }}
+          className={`flex-1 py-2 px-4 rounded transition-colors ${
+            scanMode === 'camera' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
         >
-          <Camera className="inline h-4 w-4 mr-1" /> Camera
+          <Camera className="inline-block h-4 w-4 mr-2" />
+          Camera Scan
         </button>
       </div>
 
-      {/* CAMERA MODE */}
-      {scanMode === "camera" ? (
+      {/* Camera Mode */}
+      {scanMode === 'camera' ? (
         <div className="space-y-4">
-          <div ref={containerRef} className="w-full rounded-lg overflow-hidden bg-black">
-            <QrReader
-              delay={700}
-              onError={handleCameraError}
-              onScan={handleCameraScan}
-              style={{ width: "100%", maxWidth: "400px", margin: "0 auto" }}
-              constraints={{ video: { facingMode: "environment" } }}
-            />
+          {/* Camera View */}
+          <div className="relative w-full rounded-lg overflow-hidden bg-black">
+            {cameraError ? (
+              <div className="h-80 flex items-center justify-center">
+                <div className="text-center text-white p-4">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-400" />
+                  <p className="text-sm mb-2">Camera Error</p>
+                  <p className="text-xs opacity-75">{cameraError}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="relative h-80">
+                <QrReader
+                  delay={1000}
+                  onError={handleCameraError}
+                  onScan={handleCameraScan}
+                  style={{ width: '100%', height: '100%' }}
+                  constraints={{ 
+                    video: { 
+                      facingMode: cameraFacing,
+                      width: { ideal: 1920 },
+                      height: { ideal: 1080 },
+                    } 
+                  }}
+                />
+                
+                {/* Scanning Overlay */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {/* Corner guides */}
+                  <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-blue-500"></div>
+                  <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-blue-500"></div>
+                  <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-blue-500"></div>
+                  <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-blue-500"></div>
+                  
+                  {/* Center box */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-64 h-64 border-2 border-blue-400 border-dashed rounded-lg"></div>
+                  </div>
+                  
+                  {/* Instructions */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-center py-2 text-sm">
+                    {scanning ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        QR Code Detected!
+                      </span>
+                    ) : (
+                      <>Position QR code within the frame</>
+                    )}
+                  </div>
+                </div>
 
-            {scanning && (
-              <div className="absolute inset-0 flex items-center justify-center bg-green-500 bg-opacity-30">
-                <CheckCircle className="h-10 w-10 text-white" />
+                {/* Success overlay */}
+                {scanning && (
+                  <div className="absolute inset-0 bg-green-500 bg-opacity-20 flex items-center justify-center animate-pulse">
+                    <div className="bg-white rounded-lg p-4 shadow-lg">
+                      <CheckCircle className="h-12 w-12 text-green-600 mx-auto" />
+                      <p className="text-sm font-medium mt-2">Scanning...</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Zoom controls */}
-          <div className="flex items-center gap-2">
-            <Button onClick={zoomOut}>-</Button>
-            <input
-              type="range"
-              min={zoomRange.min}
-              max={zoomRange.max}
-              step={zoomRange.step}
-              value={zoom}
-              onChange={(e) => applyZoom(Number(e.target.value))}
-              className="flex-1"
-            />
-            <Button onClick={zoomIn}>+</Button>
-            <span className="text-xs w-12 text-right">{zoom.toFixed(1)}x</span>
-          </div>
+          {/* Camera Controls */}
+          {!cameraError && (
+            <div className="space-y-3">
+              {/* Zoom Controls */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <Label className="text-sm font-medium mb-3 block">Zoom Control</Label>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleZoomOut}
+                    disabled={zoomLevel <= 1}
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="flex-1">
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      step="0.5"
+                      value={zoomLevel}
+                      onChange={(e) => applyZoom(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="text-center text-xs text-gray-600 mt-1">
+                      {zoomLevel.toFixed(1)}x
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleZoomIn}
+                    disabled={zoomLevel >= 5}
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
+              {/* Additional Controls */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={switchCamera}
+                  className="w-full"
+                >
+                  <RotateCw className="mr-2 h-4 w-4" />
+                  Switch Camera
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFocus}
+                  className="w-full"
+                >
+                  <Focus className="mr-2 h-4 w-4" />
+                  Auto Focus
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Camera Tips */}
+          <Alert>
+            <Camera className="h-4 w-4" />
+            <AlertDescription>
+              <div className="text-xs space-y-1">
+                <p><strong>Tips for better scanning:</strong></p>
+                <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
+                  <li>Hold device steady and parallel to QR code</li>
+                  <li>Ensure good lighting (avoid glare)</li>
+                  <li>Use zoom slider to adjust if QR code is far</li>
+                  <li>Distance: 20-50cm works best</li>
+                </ul>
+              </div>
+            </AlertDescription>
+          </Alert>
+
+          {cameraError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <p className="font-medium">Camera Access Error</p>
+                <p className="text-xs mt-1">
+                  Please check browser permissions or use Manual Input mode instead.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      ) : (
+        /* Manual Input Mode */
+        <div className="space-y-4">
+          <div>
+            <Label className="block text-sm font-medium mb-2">Paste QR Code Content</Label>
+            <Textarea
+              className="w-full font-mono text-sm"
+              rows={4}
+              placeholder="Example: class-id-123|qr-id-456|1234567890"
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={handleManualSubmit}
+            className="w-full"
+            disabled={!manualInput.trim()}
+          >
+            <QrCode className="mr-2 h-4 w-4" />
+            Submit QR Content
+          </Button>
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {zoomSupported ? "Using native camera zoom." : "Zoom fallback: digital zoom only."}
+            <AlertDescription className="text-xs">
+              <strong>Format:</strong> class_id|qr_id|timestamp<br/>
+              Copy this from teacher's "Copy Content" button
             </AlertDescription>
           </Alert>
         </div>
-      ) : (
-        // MANUAL MODE
-        <div className="space-y-4">
-          <Label>Paste QR Code Content</Label>
-          <Textarea
-            rows={3}
-            className="font-mono text-sm"
-            value={manualInput}
-            onChange={(e) => setManualInput(e.target.value)}
-          />
-          <Button className="w-full" onClick={handleManualSubmit}>
-            Submit
-          </Button>
-        </div>
       )}
 
-      <Button onClick={onClose} variant="outline" className="w-full">
+      {/* Close Button */}
+      <Button
+        variant="outline"
+        onClick={onClose}
+        className="w-full"
+      >
         Cancel
       </Button>
     </div>
