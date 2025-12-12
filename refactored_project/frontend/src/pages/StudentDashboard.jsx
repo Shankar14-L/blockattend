@@ -16,8 +16,6 @@ import { useAuth, API } from '../context/AuthContext';
 import { useToast } from '../hooks/use-toast'; // Assuming this is the correct hook path
 
 // QR Scanner Component with Camera and Manual Input
-// QR Scanner Component with Camera Zoom + Manual Input
-
 const QRScanner = ({ onScan, onClose }) => {
   const [manualInput, setManualInput] = useState("");
   const [scanMode, setScanMode] = useState("camera");
@@ -418,6 +416,7 @@ const QRScanner = ({ onScan, onClose }) => {
     </div>
   );
 }; 
+
 
 // Attendance Graphs with Real Data Visualization
 const AttendanceGraphs = ({ attendance }) => {
