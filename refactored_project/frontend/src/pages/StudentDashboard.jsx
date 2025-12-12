@@ -38,7 +38,7 @@ const QRScanner = ({ onScan, onClose }) => {
     return () => {
       stopCamera();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [scanMode]);
 
   // load jsQR if missing
