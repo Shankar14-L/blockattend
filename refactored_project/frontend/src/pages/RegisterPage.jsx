@@ -37,7 +37,7 @@ const RegisterPage = () => {
 // Accepts: wu, Wu, wU, WU
 const rollNoRegex = /^\d{2}[wW][uU]\d+$/;
 
-if (!rollNoRegex.test(rollNo)) {
+if (!rollNoRegex.test(rollNo.trim)) {
   alert(
     'Registration failed: Roll Number format is invalid.\n\n' +
     'Correct examples:\n' +
