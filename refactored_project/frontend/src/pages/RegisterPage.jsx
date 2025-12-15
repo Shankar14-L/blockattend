@@ -41,7 +41,7 @@ if (!rollNoRegex.test(rollNo)) {
   alert(
     'Registration failed: Roll Number format is invalid.\n\n' +
     'Correct examples:\n' +
-    '23WU01010**\n'
+    '23wu01010**\n'
   );
   setLoading(false);
   return;
