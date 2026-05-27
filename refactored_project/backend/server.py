@@ -282,7 +282,7 @@ async def call_node_eth(action, payload):
         return None
 
 # ==================== DATABASE SETUP ====================
-mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+mongo_url = os.environ.get("MONGO_URL")
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get("DB_NAME", "blockchain_attendance")]
 
